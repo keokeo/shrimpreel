@@ -47,15 +47,15 @@ export function parsePendingMigrations(output) {
   return names.length ? [...new Set(names)] : null
 }
 
-// `wrangler secret list --format json`：[{ "name": "...", "type": "secret_text" }]，前后可能夹着 wrangler 的提示行（如 ▲ [WARNING] ...）
+// `wrangler secret list --format json`：[{ "name": "...", "type": "secret_text" }]，前后都可能夹着带方括号的提示或 ANSI 转义（stdout + stderr 拼接）
 export function parseSecretNames(output) {
-  const end = output.lastIndexOf(']')
-  if (end < 0) return null
-  for (let start = output.indexOf('['); start >= 0 && start <= end; start = output.indexOf('[', start + 1)) {
-    try {
-      const list = JSON.parse(output.slice(start, end + 1))
-      if (Array.isArray(list)) return list.map((s) => s.name).filter((n) => typeof n === 'string')
-    } catch {}
+  for (let start = output.indexOf('['); start >= 0; start = output.indexOf('[', start + 1)) {
+    for (let end = output.lastIndexOf(']'); end >= start; end = output.lastIndexOf(']', end - 1)) {
+      try {
+        const list = JSON.parse(output.slice(start, end + 1))
+        if (Array.isArray(list)) return list.map((s) => s.name).filter((n) => typeof n === 'string')
+      } catch {}
+    }
   }
   return null
 }

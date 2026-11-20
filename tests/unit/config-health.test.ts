@@ -192,7 +192,7 @@ describe('doctor', () => {
       'SESSION_SECRET',
     ])
     expect(
-      parseSecretNames('▲ [WARNING] Proxy environment variables detected.\n[\n  {"name":"FAL_KEY","type":"secret_text"}\n]\n'),
+      parseSecretNames('▲ [WARNING] Proxy environment variables detected.\n[\n  {"name":"FAL_KEY","type":"secret_text"}\n]\n\u001b[33m▲ [WARNING] trailing stderr\u001b[0m\n'),
     ).toEqual(['FAL_KEY'])
     expect(parseSecretNames('✘ [ERROR] Worker not found [code: 10007]')).toBeNull()
   })
