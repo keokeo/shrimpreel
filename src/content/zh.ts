@@ -17,7 +17,7 @@ export function zh(s: S): Content {
   const { uploadDays, outputDays } = s.retention
   const photoRetention = uploadDays > 0 ? `在上传 ${uploadDays} 天后自动删除` : '保留到你主动删除为止'
   const videoRetention = outputDays > 0 ? `在完成 ${outputDays} 天后自动删除` : '保留到你主动删除为止'
-  const { ga4Id, cfBeaconToken, umamiWebsiteId, clarityId } = s.analytics
+  const { ga4Id, cfBeaconToken, umamiWebsiteId, clarityId, pvuvSiteId } = s.analytics
   const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`
   const cheapest = [...s.packages].sort((x, y) => x.priceCents - y.priceCents)[0]!
   const typeNames: Record<string, string> = { 'image/jpeg': 'JPG', 'image/png': 'PNG', 'image/webp': 'WebP' }
@@ -614,10 +614,13 @@ export function zh(s: S): Content {
               s.referralRewardCredits > 0
                 ? '如果你打开了好友的邀请链接，我们会写入一个 Cookie（vt_ref，最多保留 30 天，注册后即删除），用于记录这次邀请。为防止滥用邀请奖励，邀请记录里保存的是你的 IP 地址加盐后的哈希值，不保存 IP 地址本身。邀请双方都看不到对方的账户信息。'
                 : '',
-              ga4Id || cfBeaconToken || umamiWebsiteId || clarityId ? '' : '我们不使用第三方统计或广告 Cookie。',
+              ga4Id || cfBeaconToken || umamiWebsiteId || clarityId || pvuvSiteId ? '' : '我们不使用第三方统计或广告 Cookie。',
               cfBeaconToken ? '我们用 Cloudflare Web Analytics 统计页面浏览量，它不使用 Cookie，也不会跨网站追踪你。' : '',
               umamiWebsiteId
                 ? '我们用 Umami 统计访问量，它从我们自己的域名加载，不写入 Cookie，也不保存你的 IP 地址；IP 地址只用于判断你所在的国家和统计独立访客。'
+                : '',
+              pvuvSiteId
+                ? '我们还使用无 Cookie 的统计服务 PVUV（pvuv.ai）统计页面浏览、来源渠道以及搜索引擎与 AI 爬虫的抓取情况。它不写入 Cookie，也不会跨网站追踪你；页面地址、来源页、浏览器标识（User-Agent）、所在国家/地区与 IP 地址等技术信息仅用于统计访问量与爬虫抓取。'
                 : '',
               clarityId
                 ? '我们使用 Microsoft Clarity，通过热力图和会话回放（点击、滚动和页面切换）了解访客如何使用本站。你在表单中输入的文字会被遮盖，不会被记录。统计 Cookie 关闭时，Clarity 不写入 Cookie，也无法把不同页面的浏览关联起来；开启时它会写入 Cookie（例如 _clck、_clsk）来关联你的访问。Microsoft 代表我们处理这些数据，包括你的 IP 地址和设备信息。在页脚“Cookie 设置”中关闭统计 Cookie 会删除这些 Cookie。'
@@ -637,7 +640,7 @@ export function zh(s: S): Content {
                 },
               ]
             : []),
-          { h: '服务提供方', p: [`我们只使用少量数据处理方：云托管、存储与邮件发送、仅为你的请求处理照片的 AI 渲染服务、内容安全分类服务，以及作为记录商户（Merchant of Record）的支付服务${ga4Id || cfBeaconToken || umamiWebsiteId || clarityId ? '；另有上文所述的统计服务' : ''}。`] },
+          { h: '服务提供方', p: [`我们只使用少量数据处理方：云托管、存储与邮件发送、仅为你的请求处理照片的 AI 渲染服务、内容安全分类服务，以及作为记录商户（Merchant of Record）的支付服务${ga4Id || cfBeaconToken || umamiWebsiteId || clarityId || pvuvSiteId ? '；另有上文所述的统计服务' : ''}。`] },
           { h: '儿童', p: [`${b} 不面向 13 岁以下儿童，并要求用户年满 18 岁。我们不会有意收集 13 岁以下儿童的个人信息；一旦发现已收集，会立即删除。如果你认为有儿童向我们提供了个人信息，请发送邮件至 ${s.supportEmail}。`] },
           { h: '你的权利', p: [`你可以随时下载或删除视频，也可以在“设置”中导出个人数据（JSON）或注销账号。其他隐私请求请发送邮件至 ${s.supportEmail}。`] },
         ],

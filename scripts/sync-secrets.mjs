@@ -42,7 +42,7 @@ export function exampleSecrets(text) {
 }
 
 // remoteNames：远端已有的 secret 名字，null = 读不到
-export function planSecrets({ entries, example, remoteNames, config, overwrite = false, siteDomain = site.domain, packageIds = site.packages.map((p) => p.id), planIds = sellingPlans.map((p) => p.id), styleProviders = STYLES.flatMap((s) => (s.provider ? [s.provider] : [])) }) {
+export function planSecrets({ entries, example, remoteNames, config, overwrite = false, siteDomain = site.domain, packageIds = site.packages.map((p) => p.id), planIds = sellingPlans.map((p) => p.id), styleProviders = STYLES.flatMap((s) => (s.provider ? [s.provider] : [])), pvuvSiteId = site.analytics.pvuvSiteId }) {
   const known = exampleSecrets(example)
   const vars = config.vars ?? {}
   const errors = []
@@ -76,6 +76,7 @@ export function planSecrets({ entries, example, remoteNames, config, overwrite =
     packageIds,
     planIds,
     styleProviders,
+    pvuvSiteId,
     siteDomain,
   })
     .filter((issue) => issue.level === 'error' && known.has(issue.key))

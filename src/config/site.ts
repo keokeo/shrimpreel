@@ -238,6 +238,8 @@ export const site = {
   // Umami 不写 Cookie，不受同意横幅控制。
   // 填了 clarityId（Microsoft Clarity 项目 ID）就在正式域名上录制访客会话，同样会出现同意横幅；
   // 访客接受前以无 Cookie 模式录制，接受后才写 Cookie（见 lib/consent.ts）。
+  // 填了 pvuvSiteId（pvuv.ai 统计站点 ID）就在正式 HTTPS 域名上加载无 Cookie 统计脚本（登录页与 /admin 不加载），
+  // 并在 APP_ENV=production 且配了 PVUV_INGEST_TOKEN 时由 Worker 异步上报搜索引擎与 AI 爬虫抓取。
   // 同意横幅只对欧洲经济区、英国、瑞士和无法判断国家的访客自动弹出，其他地区默认同意、可在页脚拒绝（按 cf-ipcountry 判断）。
   // 隐私政策的“Cookie 与统计”一节按这几项自动调整
   analytics: {
@@ -245,6 +247,9 @@ export const site = {
     cfBeaconToken: '',
     umamiWebsiteId: '',
     clarityId: '',
+    pvuvSiteId: '',
+    pvuvScriptUrl: 'https://www.pvuv.ai/f.js',
+    pvuvIngestUrl: 'https://in.pvuv.ai',
   },
 } as const
 

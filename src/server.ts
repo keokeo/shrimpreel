@@ -8,6 +8,7 @@ import { PERMISSIONS_POLICY, contentSecurityPolicy, createNonce, cspHeaderName }
 import { handleDeadLetterBatch, handleQueueBatch, runScheduledMaintenance } from './server/jobs'
 import { handleDemoVideoRequest } from './server/media'
 import { runNotificationCron } from './server/notifications'
+import { reportPvuvCrawlerHit } from './server/pvuv'
 import { isSeoPath } from './server/seo'
 import { SHARE_PAGE, loadShare, shareHttpStatus } from './server/shares'
 import { handleUmamiProxy } from './server/umami'
@@ -68,6 +69,9 @@ export default {
       headers.set('Cache-Control', 'no-store')
       const status = response.status === 200 ? shareHttpStatus(share) : response.status
       response = new Response(response.body, { status, statusText: '', headers })
+    } else if (nonce && response.headers.get('Content-Type')?.startsWith('text/html')) {
+      const crawlerHit = reportPvuvCrawlerHit(request, env, url, response.status)
+      if (crawlerHit) ctx.waitUntil(crawlerHit)
     }
     if (import.meta.env.DEV) await drainUnreadBody(request)
     return withSecurityHeaders(response, env, url, nonce)

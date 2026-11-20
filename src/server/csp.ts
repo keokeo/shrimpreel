@@ -7,15 +7,36 @@
 //   Turnstile https://developers.cloudflare.com/turnstile/reference/content-security-policy/
 //   Microsoft Clarity https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-csp
 //   Cloudflare Web Analytics：脚本在 static.cloudflareinsights.com，数据发到 cloudflareinsights.com
+//   PVUV（可选，仅在配置了 site.analytics.pvuvSiteId 时放行对应的 https 脚本源与上报源）
 // 支付收银台是整页跳转，不受 CSP 限制。
+import { site } from '../config/site'
 
 export const CSP_REPORT_PATH = '/api/csp-report'
+
+export interface CspAnalyticsConfig {
+  pvuvSiteId?: string
+  pvuvScriptUrl?: string
+  pvuvIngestUrl?: string
+}
+
+function httpsOrigin(url: string | undefined): string | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' ? parsed.origin : null
+  } catch {
+    return null
+  }
+}
 
 export function createNonce() {
   return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))
 }
 
-export function contentSecurityPolicy(nonce: string) {
+export function contentSecurityPolicy(nonce: string, analytics: CspAnalyticsConfig = site.analytics) {
+  const pvuvEnabled = Boolean(analytics.pvuvSiteId?.trim())
+  const pvuvScriptOrigin = pvuvEnabled ? httpsOrigin(analytics.pvuvScriptUrl ?? 'https://www.pvuv.ai/f.js') : null
+  const pvuvIngestOrigin = pvuvEnabled ? httpsOrigin(analytics.pvuvIngestUrl ?? 'https://in.pvuv.ai') : null
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     'script-src': [
@@ -26,6 +47,7 @@ export function contentSecurityPolicy(nonce: string) {
       'https://challenges.cloudflare.com',
       'https://accounts.google.com/gsi/client',
       'https://*.clarity.ms',
+      ...(pvuvScriptOrigin ? [pvuvScriptOrigin] : []),
     ],
     // React 的 style 属性属于内联样式，只能放开 'unsafe-inline'（style-src 里有 nonce 时它会被忽略，所以这里不加 nonce）
     'style-src': ["'self'", "'unsafe-inline'", 'https://accounts.google.com/gsi/style'],
@@ -43,6 +65,7 @@ export function contentSecurityPolicy(nonce: string) {
       'https://accounts.google.com/gsi/',
       'https://*.clarity.ms',
       'https://c.bing.com',
+      ...(pvuvIngestOrigin ? [pvuvIngestOrigin] : []),
     ],
     'frame-src': ['https://challenges.cloudflare.com', 'https://accounts.google.com/gsi/'],
     'frame-ancestors': ["'self'"],

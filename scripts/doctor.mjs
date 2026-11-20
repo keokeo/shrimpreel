@@ -83,7 +83,7 @@ export function findDirtyFiles(root = fileURLToPath(new URL('..', import.meta.ur
 // secretNames / pendingMigrations / dirtyFiles：undefined = 没有核对，null = 查询失败
 export function runDoctor(
   config,
-  { secretNames, pendingMigrations, siteDomain = site.domain, packageIds = site.packages.map((p) => p.id), planIds = sellingPlans.map((p) => p.id), styleProviders = STYLES.flatMap((s) => (s.provider ? [s.provider] : [])), siteTodos = [], dirtyFiles = [] } = {},
+  { secretNames, pendingMigrations, siteDomain = site.domain, packageIds = site.packages.map((p) => p.id), planIds = sellingPlans.map((p) => p.id), styleProviders = STYLES.flatMap((s) => (s.provider ? [s.provider] : [])), pvuvSiteId = site.analytics.pvuvSiteId, siteTodos = [], dirtyFiles = [] } = {},
 ) {
   const vars = config.vars ?? {}
   const issues = checkConfig({
@@ -94,6 +94,7 @@ export function runDoctor(
     packageIds,
     planIds,
     styleProviders,
+    pvuvSiteId,
     siteDomain,
   })
   const error = (key, message) => issues.push({ level: 'error', key, message })

@@ -58,6 +58,26 @@ export function clarityBootstrapScript(clarityId: string, domain: string) {
   ].join('')
 }
 
+// <head> 内联脚本：PVUV（pvuv.ai）无 Cookie 访问统计，不受同意横幅控制。
+// 只在正式 HTTPS 域名（含 www、无自定义端口）加载，本地开发、e2e 和 staging 不发外部请求；登录页与 /admin 不加载。
+// 外层内联脚本由 headScripts 注入 CSP nonce；动态创建的外部脚本沿用同一个 nonce。
+export function pvuvBootstrapScript(
+  siteId: string,
+  domain: string,
+  scriptUrl = 'https://www.pvuv.ai/f.js',
+  ingestUrl = 'https://in.pvuv.ai',
+) {
+  const d = JSON.stringify(domain)
+  return [
+    `(function(){var h=location.hostname,p=location.pathname;if(location.protocol!=='https:'||location.port||(h!==${d}&&h!=='www.'+${d}))return;`,
+    'if(/^\\/admin(?:\\/|$)/.test(p)||/^\\/(?:[a-z]{2}(?:-[a-z]{2})?\\/)?sign-in(?:\\/|$)/i.test(p))return;',
+    'window.pvuv=window.pvuv||function(){(window.pvuv.q=window.pvuv.q||[]).push(arguments)};',
+    `var s=document.createElement('script');s.defer=true;s.src=${JSON.stringify(scriptUrl)};`,
+    `s.setAttribute('data-site',${JSON.stringify(siteId)});s.setAttribute('data-api',${JSON.stringify(ingestUrl)});`,
+    'var c=document.currentScript;if(c&&c.nonce)s.nonce=c.nonce;document.head.appendChild(s)})()',
+  ].join('')
+}
+
 export function readConsent(): Consent | null {
   try {
     const value = localStorage.getItem(CONSENT_KEY)

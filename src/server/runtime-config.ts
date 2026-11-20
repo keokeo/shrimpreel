@@ -13,6 +13,7 @@ export function configIssues(env: Env, paymentProvider?: string) {
     packageIds: site.packages.map((p) => p.id),
     planIds: sellingPlans.map((p) => p.id),
     styleProviders: STYLES.flatMap((s) => (s.provider ? [s.provider] : [])),
+    pvuvSiteId: site.analytics.pvuvSiteId,
     siteDomain: site.domain,
   })
 }

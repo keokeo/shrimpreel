@@ -1,19 +1,32 @@
 import { runInNewContext } from 'node:vm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { CONSENT_KEY, clarityBootstrapScript, ga4BootstrapScript, regionalConsentDefault, saveConsent } from '#/lib/consent'
+import { CONSENT_KEY, clarityBootstrapScript, ga4BootstrapScript, pvuvBootstrapScript, regionalConsentDefault, saveConsent } from '#/lib/consent'
 
 const GA4_ID = 'G-TEST123'
 
 // 最小浏览器环境：记录 dataLayer、追加到 <head> 的脚本和每次写 document.cookie 的内容
 // regionDefault：服务端写在 <html data-consent-default> 上的地区默认值
 function browser(stored: string | null | 'throws', href = 'https://example.test/checkout/result?email=buyer%40example.test&status=paid', regionDefault = 'denied') {
-  const appended: Array<{ src: string }> = []
+  const appended: Array<{ src: string; async: boolean; defer: boolean; nonce: string; attributes: Record<string, string> }> = []
   const cookieWrites: string[] = []
   let cookie = ''
   const document = {
     documentElement: { getAttribute: (name: string) => (name === 'data-consent-default' ? regionDefault : null) },
-    createElement: () => ({ async: false, src: '' }),
-    head: { appendChild: (el: { src: string }) => appended.push(el) },
+    currentScript: null as { nonce: string } | null,
+    createElement: () => {
+      const attributes: Record<string, string> = {}
+      return {
+        async: false,
+        defer: false,
+        src: '',
+        nonce: '',
+        attributes,
+        setAttribute: (name: string, value: string) => {
+          attributes[name] = value
+        },
+      }
+    },
+    head: { appendChild: (el: (typeof appended)[number]) => appended.push(el) },
     querySelector: (selector: string) => appended.find((el) => selector.includes(el.src.split('?')[0]!)) ?? null,
     get cookie() {
       return cookie
@@ -134,6 +147,51 @@ describe('clarityBootstrapScript', () => {
       const { env, queue } = clarity(href)
       expect(queue).toEqual([])
       expect(env.appended).toEqual([])
+    }
+  })
+})
+
+describe('pvuvBootstrapScript', () => {
+  it('正式 HTTPS 主域与 www 加载脚本、设置队列桩并传递 CSP nonce，不受统计 Cookie 同意状态影响', () => {
+    for (const href of ['https://example.test/', 'https://www.example.test/pricing', 'https://example.test/administrator-guide']) {
+      for (const stored of [null, 'denied'] as const) {
+        const env = browser(stored, href)
+        env.context.document.currentScript = { nonce: 'csp-nonce-1' }
+        const global = env.run(pvuvBootstrapScript('site_abc', 'example.test')) as unknown as {
+          pvuv?: ((...args: unknown[]) => void) & { q?: IArguments[] }
+        }
+        expect(typeof global.pvuv).toBe('function')
+        global.pvuv!('event', 'signup')
+        expect(Array.from(global.pvuv!.q![0]!)).toEqual(['event', 'signup'])
+        expect(env.appended).toHaveLength(1)
+        expect(env.appended[0]).toMatchObject({
+          src: 'https://www.pvuv.ai/f.js',
+          defer: true,
+          nonce: 'csp-nonce-1',
+          attributes: { 'data-site': 'site_abc', 'data-api': 'https://in.pvuv.ai' },
+        })
+      }
+    }
+  })
+
+  it('本地、预发、非 HTTPS、自定义端口、登录页与 /admin 都不加载', () => {
+    for (const href of [
+      'http://localhost:3200/',
+      'http://127.0.0.1:3231/',
+      'https://staging.example.test/',
+      'https://preview.workers.dev/',
+      'https://example.test.evil.dev/',
+      'https://example.test:8443/',
+      'http://example.test/',
+      'https://example.test/admin',
+      'https://example.test/admin/orders',
+      'https://example.test/sign-in',
+      'https://example.test/zh/sign-in?redirect=%2Fdashboard',
+    ]) {
+      const env = browser(null, href)
+      const global = env.run(pvuvBootstrapScript('site_abc', 'example.test')) as unknown as { pvuv?: unknown }
+      expect(global.pvuv, href).toBeUndefined()
+      expect(env.appended, href).toEqual([])
     }
   })
 })

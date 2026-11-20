@@ -19,6 +19,8 @@ export interface ConfigInput {
   planIds?: readonly string[]
   // 风格固定的视频服务商（STYLES 里写了 provider 的）：和 VIDEO_PROVIDER 不同的也要有各自的密钥
   styleProviders?: readonly string[]
+  // site.analytics.pvuvSiteId：配了它但没配 PVUV_INGEST_TOKEN 时，生产环境提示爬虫访问无法上报
+  pvuvSiteId?: string
   siteDomain: string
 }
 
@@ -182,6 +184,14 @@ export function checkConfig(input: ConfigInput): ConfigIssue[] {
   // Umami 同域代理（可选）：只检查格式
   const umami = vars('UMAMI_ORIGIN')
   if (umami && !/^https:\/\/[^/?#\s]+$/.test(umami)) warn('UMAMI_ORIGIN', 'UMAMI_ORIGIN 不是不带路径的 https 地址（如 https://umami.example.com）：Umami 统计无法代理')
+
+  // PVUV 爬虫访问上报（可选）：前端统计只靠 pvuvSiteId 即可工作，缺上报令牌时服务端无法记录爬虫抓取
+  if (production && text(input.pvuvSiteId)) {
+    const pvuvToken = input.secrets.PVUV_INGEST_TOKEN
+    if (pvuvToken !== true && !text(pvuvToken)) {
+      warn('PVUV_INGEST_TOKEN', '已配置 site.analytics.pvuvSiteId 但缺少密钥 PVUV_INGEST_TOKEN：搜索和 AI 爬虫访问无法上报到 PVUV')
+    }
+  }
 
   // 付款即时通知（可选）：只检查格式，不输出地址（里面带 token）
   const chat = input.secrets.PAYMENT_NOTIFY_WEBHOOK_URL

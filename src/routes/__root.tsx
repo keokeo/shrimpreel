@@ -7,7 +7,7 @@ import { Footer } from '#/components/Footer'
 import { Nav } from '#/components/Nav'
 import { LocalLink } from '#/components/ui'
 import { site } from '#/config/site'
-import { CONSENT_REQUIRED, clarityBootstrapScript, consentDefault, ga4BootstrapScript, type Consent } from '#/lib/consent'
+import { CONSENT_REQUIRED, clarityBootstrapScript, consentDefault, ga4BootstrapScript, pvuvBootstrapScript, type Consent } from '#/lib/consent'
 import { installErrorReporting, reportClientError } from '#/lib/error-report'
 import { htmlLang, loadContent, localeFromPathname, useContent } from '#/lib/i18n'
 import { SessionProvider } from '#/lib/session'
@@ -20,7 +20,7 @@ const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');if(!t)
 // head 里的脚本由框架带上 CSP nonce（见 src/server/csp.ts），自定义内联脚本都放这里，不要直接写 <script>
 function headScripts() {
   const scripts: Array<Record<string, unknown>> = [{ children: THEME_SCRIPT }]
-  const { ga4Id, cfBeaconToken, umamiWebsiteId, clarityId } = site.analytics
+  const { ga4Id, cfBeaconToken, umamiWebsiteId, clarityId, pvuvSiteId, pvuvScriptUrl, pvuvIngestUrl } = site.analytics
   // GA4 要等访客在同意横幅点“接受”后才加载（见 lib/consent.ts）
   if (ga4Id) scripts.push({ children: ga4BootstrapScript(ga4Id) })
   if (cfBeaconToken) {
@@ -34,6 +34,8 @@ function headScripts() {
   if (umamiWebsiteId) scripts.push({ src: '/s/script.js', defer: true, 'data-website-id': umamiWebsiteId })
   // Clarity 录屏：未同意时无 Cookie 模式，只在正式域名上加载
   if (clarityId) scripts.push({ children: clarityBootstrapScript(clarityId, site.domain) })
+  // PVUV 无 Cookie 统计：只在正式 HTTPS 域名加载，登录页与 /admin 自动跳过
+  if (pvuvSiteId) scripts.push({ children: pvuvBootstrapScript(pvuvSiteId, site.domain, pvuvScriptUrl, pvuvIngestUrl) })
   return scripts
 }
 
@@ -114,6 +116,7 @@ function NotFoundPage() {
   const c = useContent()
   return (
     <SiteFrame>
+      {site.analytics.pvuvSiteId ? <meta name="pvuv:404" content="1" /> : null}
       <div className="container-page max-w-xl py-28 text-center">
         <p className="eyebrow text-muted">404</p>
         <h1 className="mt-3 font-display text-5xl">{c.common.notFoundTitle}</h1>

@@ -2,12 +2,31 @@ import { describe, expect, it } from 'vitest'
 import { contentSecurityPolicy, cspHeaderName, summarizeCspReports } from '#/server/csp'
 
 describe('contentSecurityPolicy', () => {
-  it('包含 media-src self blob 且响应头随 cspReportOnly 切换', () => {
-    const policy = contentSecurityPolicy('nonce-123')
+  it('包含 media-src self blob 且响应头随 cspReportOnly 切换；未配置 pvuvSiteId 时不放行 pvuv.ai', () => {
+    const policy = contentSecurityPolicy('nonce-123', { pvuvSiteId: '' })
     expect(policy).toContain("media-src 'self' blob:")
     expect(policy).toContain("'nonce-nonce-123'")
+    expect(policy).not.toContain('pvuv.ai')
     expect(cspHeaderName(true)).toBe('Content-Security-Policy-Report-Only')
     expect(cspHeaderName(false)).toBe('Content-Security-Policy')
+  })
+
+  it('配置了 pvuvSiteId 时在 script-src 与 connect-src 放行对应的 https 源', () => {
+    const policy = contentSecurityPolicy('nonce-456', {
+      pvuvSiteId: 'site_123',
+      pvuvScriptUrl: 'https://www.pvuv.ai/f.js',
+      pvuvIngestUrl: 'https://in.pvuv.ai',
+    })
+    expect(policy).toMatch(/script-src[^;]*https:\/\/www\.pvuv\.ai/)
+    expect(policy).toMatch(/connect-src[^;]*https:\/\/in\.pvuv\.ai/)
+
+    // 非 https 的无效地址不会混进 CSP
+    const insecure = contentSecurityPolicy('nonce-789', {
+      pvuvSiteId: 'site_123',
+      pvuvScriptUrl: 'http://www.pvuv.ai/f.js',
+      pvuvIngestUrl: 'not-a-url',
+    })
+    expect(insecure).not.toContain('pvuv.ai')
   })
 })
 

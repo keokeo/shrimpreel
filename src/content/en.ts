@@ -25,7 +25,7 @@ export function en(s: S) {
   const { uploadDays, outputDays } = s.retention
   const photoRetention = uploadDays > 0 ? `deleted automatically ${uploadDays} days after upload` : 'kept until you delete them'
   const videoRetention = outputDays > 0 ? `kept for ${outputDays} days after they finish` : 'kept until you delete them'
-  const { ga4Id, cfBeaconToken, umamiWebsiteId, clarityId } = s.analytics
+  const { ga4Id, cfBeaconToken, umamiWebsiteId, clarityId, pvuvSiteId } = s.analytics
   const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`
   const cheapest = [...s.packages].sort((x, y) => x.priceCents - y.priceCents)[0]!
   const typeNames: Record<string, string> = { 'image/jpeg': 'JPG', 'image/png': 'PNG', 'image/webp': 'WebP' }
@@ -649,10 +649,13 @@ export function en(s: S) {
               s.referralRewardCredits > 0
                 ? 'If you open a friend’s invite link, we set a cookie (vt_ref, kept for up to 30 days and removed once you sign up) so the invite can be credited. To prevent abuse of invite rewards, we store a salted hash of your IP address with the invite, not the address itself. Neither of you can see the other’s account details.'
                 : '',
-              ga4Id || cfBeaconToken || umamiWebsiteId || clarityId ? '' : 'We do not use third-party analytics or advertising cookies.',
+              ga4Id || cfBeaconToken || umamiWebsiteId || clarityId || pvuvSiteId ? '' : 'We do not use third-party analytics or advertising cookies.',
               cfBeaconToken ? 'We count page views with Cloudflare Web Analytics, which does not use cookies or track you across websites.' : '',
               umamiWebsiteId
                 ? 'We count visits with Umami, a cookie-free analytics tool loaded from our own domain. It does not set cookies or store your IP address; your IP address is only used to determine your country and to count unique visits.'
+                : '',
+              pvuvSiteId
+                ? 'We also measure page views, traffic sources and search or AI crawler visits with PVUV (pvuv.ai), a cookie-free analytics service. It does not set cookies or track you across websites; technical request details such as page URL, referrer, browser user agent, country and IP address are processed only to count visits and crawler activity.'
                 : '',
               clarityId
                 ? 'We use Microsoft Clarity to understand how visitors use the site through heatmaps and session recordings of clicks, scrolling and page changes. Text you type into forms is masked and not recorded. While analytics cookies are off, Clarity sets no cookies and cannot link one page view to the next; while they are on, it sets cookies (such as _clck and _clsk) to connect your visits. Microsoft processes this data, including your IP address and device information, on our behalf. Turning analytics cookies off under “Cookie settings” in the footer deletes these cookies.'
@@ -672,7 +675,7 @@ export function en(s: S) {
                 },
               ]
             : []),
-          { h: 'Service providers', p: [`We rely on a small number of processors: cloud hosting, storage and email delivery, an AI rendering provider that processes your photo only for your request, a content-safety classifier, a payment provider acting as merchant of record${ga4Id || cfBeaconToken || umamiWebsiteId || clarityId ? ', and the analytics services described above' : ''}.`] },
+          { h: 'Service providers', p: [`We rely on a small number of processors: cloud hosting, storage and email delivery, an AI rendering provider that processes your photo only for your request, a content-safety classifier, a payment provider acting as merchant of record${ga4Id || cfBeaconToken || umamiWebsiteId || clarityId || pvuvSiteId ? ', and the analytics services described above' : ''}.`] },
           { h: 'Children', p: [`${b} is not directed to children under 13 and requires users to be 18 or older. We do not knowingly collect personal data from children under 13. If we learn that we have, we delete it. Email ${s.supportEmail} if you believe a child has given us personal data.`] },
           { h: 'Your rights', p: [`You can download or delete your videos at any time. In Settings you can export a copy of your data as JSON or delete your account. For any other privacy request, email ${s.supportEmail}.`] },
         ],

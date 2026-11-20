@@ -51,6 +51,7 @@
 | `TURNSTILE_SECRET_KEY` | 配了 `TURNSTILE_SITE_KEY` | 同上 |
 | `PAYMENT_NOTIFY_WEBHOOK_URL` | 可选 | 每笔订单首次入账（含后台补单）时往聊天群发一条付款消息：金额、套餐、积分、来源和订单号。按域名识别：Telegram 填 `https://api.telegram.org/bot<token>/sendMessage?chat_id=<id>`；飞书 / Lark 填自定义机器人地址（不要开“签名校验”，可以用关键词“新付款”）；Discord 填频道 webhook；其他地址（如 Slack Incoming Webhook）发 `{"text": ...}`。发送失败只记日志，不影响入账。也会收到运维告警（健康检查、备份失败、视频服务商余额低于 10 美元；同一类告警每 6 小时最多一条），飞书关键词建议同时加“告警”。地址里带 token，所以放 secret。可选 secret，类型声明在 `src/env.d.ts` |
 | `RESEND_API_KEY` | 可选 | 配了且 `EMAIL_FROM` 非空时，全部交易邮件改走 [Resend](https://resend.com/)（`POST /emails`），不再用 `send_email` binding；不配则行为不变。Workers Free 上 Email Service 只能发给 Cloudflare 里已验证的地址，Resend 免费档（每月 3000 封、每天 100 封）可以发给用户。发件域名要先在 Resend 的 Domains 验证，后台“测试连接”会注明走的是哪个渠道。可选 secret，类型声明在 `src/env.d.ts` |
+| `PVUV_INGEST_TOKEN` | 配了 `site.analytics.pvuvSiteId` 时推荐 | 在 `pvuv.ai` 后台为对应统计站点创建的**仅上报**令牌；`APP_ENV=production` 下 Worker 对公开页面 `GET`（200/404）识别搜索引擎与 AI 爬虫 User-Agent 并经 `ctx.waitUntil` 异步上报 `crawler_hits`。不配时前端无 Cookie 访问统计照常工作，但服务端不报爬虫命中，上线检查给出提醒。可选 secret，类型声明在 `src/env.d.ts` |
 
 切换支付商后，只要旧支付商还有订单可能退款或需要查单，就保留它的 secret。
 
@@ -60,7 +61,7 @@
 - `packages`：积分包。`id` 要在 `*_PRODUCTS` 里有对应的商品，页面上的价格要和支付商后台一致。
 - `subscriptionsEnabled`、`plans`：订阅开关和套餐（`interval` 为 `month` 或 `year`，`credits` 是每月发放量）。套餐同样要在 `*_PRODUCTS` 里有商品；不卖订阅时把开关设为 `false`。用法见 [subscriptions.md](subscriptions.md)，入账规则见 [payments.md](payments.md) 的“订阅”。
 - `video`：模型、源视频帧率和每视频秒的成本，用于估算毛利。
-- `analytics.ga4Id`、`analytics.cfBeaconToken`、`analytics.umamiWebsiteId`、`analytics.clarityId`：统计。`umamiWebsiteId` 配合 `UMAMI_ORIGIN` 使用，同域代理、不写 Cookie、不受横幅控制。`clarityId` 是 Microsoft Clarity 项目 ID，只在正式域名加载，未同意时无 Cookie 录制。填了 `ga4Id` 或 `clarityId` 才启用 Cookie 同意：欧洲经济区、英国、瑞士和无法判断国家的访客默认关闭并弹横幅，其他地区默认开启、可在页脚“Cookie 设置”里拒绝（按 `cf-ipcountry` 判断，见 `src/lib/consent.ts`）；归因 Cookie `vt_attr` 跟随同一个同意状态。
+- `analytics.ga4Id`、`analytics.cfBeaconToken`、`analytics.umamiWebsiteId`、`analytics.clarityId`、`analytics.pvuvSiteId`（及 `pvuvScriptUrl`、`pvuvIngestUrl`）：统计。`umamiWebsiteId` 配合 `UMAMI_ORIGIN` 使用，同域代理、不写 Cookie、不受横幅控制。`clarityId` 是 Microsoft Clarity 项目 ID，只在正式域名加载，未同意时无 Cookie 录制。`pvuvSiteId` 是 PVUV（`pvuv.ai`）站点 ID，只在正式 HTTPS 主域及 `www` 加载（登录页与 `/admin` 跳过），无 Cookie、不受横幅控制，CSP 自动放行配置的脚本与上报源，404 页输出 `<meta name="pvuv:404">`，配合 `PVUV_INGEST_TOKEN` 在生产环境异步上报爬虫抓取。填了 `ga4Id` 或 `clarityId` 才启用 Cookie 同意：欧洲经济区、英国、瑞士和无法判断国家的访客默认关闭并弹横幅，其他地区默认开启、可在页脚“Cookie 设置”里拒绝（按 `cf-ipcountry` 判断，见 `src/lib/consent.ts`）；归因 Cookie `vt_attr` 跟随同一个同意状态。
 - `share.enabled`：成片公开分享页，默认开启。换脸、真人类站点风险高时设为 `false`，个人中心的分享按钮和 `/v/<id>` 页面都不出现。
 - `aiMetadata.enabled`：成片 XMP 机器可读 AI 标记和 `/verify` 验证页，默认关闭。开启后成片写入 XMP、页脚和 sitemap 出现 `/verify`、服务条款提到元数据；关闭时页面和 `GET /api/verify/:id` 返回 404。面向欧盟用户的站点建议开启。
 - `fraudWarningAutoRefund`：Stripe 欺诈预警（actionable）时是否自动全额退款并立即回收剩余积分（同时取消关联活跃订阅），默认开启；设为 `false` 时只通知管理员，由管理员在后台退款。

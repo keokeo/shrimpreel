@@ -24,3 +24,5 @@ TURNSTILE_SECRET_KEY=
 PAYMENT_NOTIFY_WEBHOOK_URL=
 # Resend 发信（可选）：配了且 vars.EMAIL_FROM 非空时，交易邮件改走 Resend（免费档每月 3000 封、每天 100 封），发件域名要先在 Resend 验证；不配则用 send_email binding
 RESEND_API_KEY=
+# PVUV 爬虫访问上报令牌（可选）：site.analytics.pvuvSiteId 非空时，在 pvuv.ai 后台建仅上报令牌填入，见 docs/env.md
+PVUV_INGEST_TOKEN=

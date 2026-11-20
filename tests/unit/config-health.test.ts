@@ -164,6 +164,15 @@ describe('checkConfig', () => {
     expect(keys(ready({ ...noKey, vars: { APP_ENV: 'staging' } }))).not.toContain('warn:RESEND_API_KEY')
     expect(keys(ready({ ...noKey, vars: { EMAIL_FROM: '' } }))).toEqual(['warn:EMAIL_FROM'])
   })
+
+  it('PVUV：未配 pvuvSiteId 不提醒；生产环境配了 pvuvSiteId 但缺 PVUV_INGEST_TOKEN 时提醒', () => {
+    expect(keys(ready())).toEqual([])
+    expect(keys({ ...ready(), pvuvSiteId: 'pvuv_site_1' })).toEqual(['warn:PVUV_INGEST_TOKEN'])
+    expect(keys({ ...ready({ secrets: { PVUV_INGEST_TOKEN: '  ' } }), pvuvSiteId: 'pvuv_site_1' })).toEqual(['warn:PVUV_INGEST_TOKEN'])
+    expect(keys({ ...ready({ secrets: { PVUV_INGEST_TOKEN: 'pvuv_tok_1' } }), pvuvSiteId: 'pvuv_site_1' })).toEqual([])
+    expect(keys({ ...ready({ secrets: { PVUV_INGEST_TOKEN: true } }), pvuvSiteId: 'pvuv_site_1' })).toEqual([])
+    expect(keys({ ...ready({ vars: { APP_ENV: 'staging', WAFFO_ENVIRONMENT: 'test' } }), pvuvSiteId: 'pvuv_site_1' })).toEqual([])
+  })
 })
 
 describe('doctor', () => {
