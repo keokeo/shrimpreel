@@ -191,6 +191,9 @@ describe('doctor', () => {
       'FAL_KEY',
       'SESSION_SECRET',
     ])
+    expect(
+      parseSecretNames('▲ [WARNING] Proxy environment variables detected.\n[\n  {"name":"FAL_KEY","type":"secret_text"}\n]\n'),
+    ).toEqual(['FAL_KEY'])
     expect(parseSecretNames('✘ [ERROR] Worker not found [code: 10007]')).toBeNull()
   })
 
