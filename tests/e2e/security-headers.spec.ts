@@ -13,6 +13,8 @@ async function watch(page: Page) {
   await page.exposeFunction('__cspViolation', (line: string) => violations.push(line))
   await page.addInitScript(() => {
     document.addEventListener('securitypolicyviolation', (e) => {
+      // Vite 开发服务器的 /@vite/client 在 HMR 连接断开重连时会起 blob: Worker，只存在于本地 dev，正式构建没有这段代码
+      if (e.sourceFile.includes('/@vite/')) return
       const report = (window as unknown as { __cspViolation: (line: string) => void }).__cspViolation
       report(`${e.effectiveDirective} ${e.blockedURI || '-'} @ ${location.pathname}`)
     })
