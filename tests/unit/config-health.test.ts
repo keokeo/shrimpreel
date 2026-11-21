@@ -211,7 +211,8 @@ describe('doctor', () => {
   })
   const allSecrets = Object.keys(ready().secrets)
   const doctorKeys = (config: Record<string, any>, options: Parameters<typeof runDoctor>[1] = {}) =>
-    runDoctor(config, { secretNames: allSecrets, pendingMigrations: [], siteDomain: 'moonhop.ai', styleProviders: [], ...options }).map((i) => `${i.level}:${i.key}`)
+    // pvuvSiteId 固定为空：站点填了 PVUV 站点 ID 也不影响这里（PVUV 的提醒在上面单独测）
+    runDoctor(config, { secretNames: allSecrets, pendingMigrations: [], siteDomain: 'moonhop.ai', styleProviders: [], pvuvSiteId: '', ...options }).map((i) => `${i.level}:${i.key}`)
 
   it('可上线的配置通过；缺 secret、未应用 migration、查询失败都报错', () => {
     expect(doctorKeys(deployable())).toEqual([])

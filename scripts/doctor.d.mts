@@ -19,6 +19,7 @@ export function runDoctor(
     packageIds?: string[]
     planIds?: string[]
     styleProviders?: string[]
+    pvuvSiteId?: string
     siteTodos?: SiteTodo[]
     dirtyFiles?: string[] | null
   },
